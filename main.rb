@@ -70,7 +70,7 @@ PROMOTION_OFFERS = [
       {
         code: ["product", "code"],
         operation: "==",
-        value: "R01" # if operation include, this value must be array
+        value: "R01" # if operation is include?, this value must be array
       }
     ]
   }
@@ -89,9 +89,9 @@ me = my_shop.add_user("Atras")
 # get cart for user
 my_cart = me.cart
 
-my_cart.add_item("B01", 1)
-my_cart.add_item("G01", 1)
+my_cart.add_item("B01", 2)
+# my_cart.add_item("G01", 1)
 my_cart.add_item("R01", 3)
-
+# my_cart.add_item("R01", 1)
 
 my_cart.print_data()

@@ -41,7 +41,7 @@ class Cart
     @total_item_discount = discount[:items]
     @subtotal_item_prices = total_item_prices + discount[:items]
     @shipping_cost = get_shipping_cost()
-    @grand_total = @total_item_prices + @shipping_cost
+    @grand_total = @subtotal_item_prices + @shipping_cost
   end
 
   def get_shipping_cost
@@ -76,6 +76,38 @@ class Cart
       puts "valid #{valid}"
       next unless valid
       
+      # apply discount
+      items.each do |item|
+        valid = offer[:item_rules].all? do |rule|
+          object_to_compare = get_object_from_string(item, rule[:code])
+          compare(object_to_compare, rule[:operation], rule[:value])
+        end
+        next unless valid # only apply to matching item
+        
+        discount = case offer[:item_discount_type]
+                   when "percent"
+                      value = [offer[:item_discount_value], 0].max # min 0% | handle negative value
+                      value = 100 if value > 100 # max 100%
+                      price_per_pcs = item.product.price
+                       
+                      quantity = offer[:item_discount_quantity]
+                      # handle if quantity exceed current quantity or negative
+                      quantity = item.quantity if quantity < 0 || quantity > item.quantity 
+                      price_per_pcs * quantity * (value/100.0)
+                   when "absolute" # absolute
+                      price_per_pcs = item.product.price
+                      if offer[:item_discount_value] > price_per_pcs # if exceed value
+                        price_per_pcs * item.quantity
+                      else
+                        offer[:item_discount_value] * item.quantity
+                      end
+                   else
+                      0
+                   end
+        # apply to cart.items
+        item.discount = -discount
+        item_discount += discount
+      end
     end
     
     return {

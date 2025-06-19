@@ -30,3 +30,7 @@ me = my_shop.add_user("Atras")
 # get cart for user
 my_cart = me.cart
 
+my_cart.add_item("R01", 1)
+
+puts my_cart.items.first.product.name
+

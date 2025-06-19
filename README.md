@@ -71,6 +71,11 @@ PROMOTION_OFFERS = [
 ]
 my_shop.promotion_offers = PROMOTION_OFFERS
 ```
+### Explanation:
+- `item_discount_type`: `percent`, percentage discount based on original price
+- `item_discount_quantity`: Only 1 item gets discounted, if its negative value, it will apply to all items that matching
+- `cart_rules.items`: Checks if the cart has at least 2 `R01` products.
+- `item_rules`: Applies discount to each `R01` item with quantity `item_discount_quantity`
 
 ## Add Item to Cart
 Need to create user first and then get the cart and after that add item to cart
@@ -83,11 +88,6 @@ my_cart = me.cart
 
 my_cart.add_item("B01", 2)
 ```
-### Explanation:
-- `item_discount_type`: `percent`, percentage discount based on original price
-- `item_discount_quantity`: Only 1 item gets discounted, if its negative value, it will apply to all items that matching
-- `cart_rules.items`: Checks if the cart has at least 2 `R01` products.
-- `item_rules`: Applies discount to each `R01` item with quantity `item_discount_quantity`
 
 # Summary
 - Config-based approach: Rules are separated from logic, which allows future flexibility.

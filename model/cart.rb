@@ -58,18 +58,18 @@ class Cart
     shop.promotion_offers.each do |offer|
       # check if meets condition
       valid = offer[:cart_rules].all? do |key, rules| # all? to check all condition is true
-        object = get_object_from_string(self, key) # call function
+        object = Helper::get_object_from_string(self, key) # call function
         if object.is_a?(Array) # check object an array
           result = object.map do |object_item|
               rules.all? do |rule| # all? to check all true
-                  object_to_compare = get_object_from_string(object_item, rule[:code])
-                  compare(object_to_compare, rule[:operation], rule[:value])
+                  object_to_compare = Helper::get_object_from_string(object_item, rule[:code])
+                  Helper::compare(object_to_compare, rule[:operation], rule[:value])
               end
           end
           result.include?(true) # on array object, just need 1 item match all rules
         else
           rules.all? do |rule| # all? to check all true
-            compare(object, rule[:operation], rule[:value])
+            Helper::compare(object, rule[:operation], rule[:value])
           end
         end
       end
@@ -79,8 +79,8 @@ class Cart
       # apply discount
       items.each do |item|
         valid = offer[:item_rules].all? do |rule|
-          object_to_compare = get_object_from_string(item, rule[:code])
-          compare(object_to_compare, rule[:operation], rule[:value])
+          object_to_compare = Helper::get_object_from_string(item, rule[:code])
+          Helper::compare(object_to_compare, rule[:operation], rule[:value])
         end
         next unless valid # only apply to matching item
         
@@ -115,24 +115,6 @@ class Cart
       # shipping: -shipping_discount,
       items: -item_discount
     }
-  end
-
-  # call string method from object/variable
-  def get_object_from_string(object, code)
-      return object.send(code) unless code.is_a?(Array)
-      code.each do |c|
-        object = get_object_from_string(object, c)
-      end
-      return object
-  end
-
-  # execute operation from string
-  def compare(object, operation, value)
-      if operation == "include?"
-        value.send(operation, object)
-      else
-        object.send(operation, value)
-      end
   end
 
   def print_data

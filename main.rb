@@ -1,3 +1,4 @@
+require_relative "helper"
 # load all models
 Dir["./model/**/*.rb"].each { |file| require_relative file }
 

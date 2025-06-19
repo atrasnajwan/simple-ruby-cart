@@ -1,6 +1,6 @@
 class Cart
   attr_accessor :shop, :user, :items, :shipping_cost, 
-                :total_quantity, :total_item_prices, :total_item_discount, :grand_total
+                :total_quantity, :total_item_prices, :subtotal_item_prices, :total_item_discount, :grand_total
                 # :shipping_discount, :discount_total,
     
   def initialize(shop, user)
@@ -10,7 +10,8 @@ class Cart
       @shipping_cost = 0.0
       # @shipping_discount = 0.0
       @total_quantity = 0
-      @total_item_prices = 0.0 # total item price with discount
+      @total_item_prices = 0.0 # total item price WITHOUT discount
+      @subtotal_item_prices = 0.0 # total item price with discount
       @total_item_discount = 0.0   # total item discount only
       # @discount_total = 0.0 # sum of item discount and shipping_discount
       @grand_total = 0.0
@@ -36,15 +37,70 @@ class Cart
     
     @total_quantity += quantity
     @total_item_prices += item.product.price * quantity
+    discount = get_discount()
+    @total_item_discount = discount[:items]
+    @subtotal_item_prices = total_item_prices + discount[:items]
     @shipping_cost = get_shipping_cost()
     @grand_total = @total_item_prices + @shipping_cost
   end
 
   def get_shipping_cost
-      rule = shop.shipping_cost_rules.find { |rule| total_item_prices >= rule[:threshold] }
+      # get shipping discount from total price with discount
+      rule = shop.shipping_cost_rules.find { |rule| subtotal_item_prices >= rule[:threshold] }
       return 0 unless rule # default
       
       return rule[:value]
+  end
+
+  def get_discount
+    item_discount = 0
+    shipping_discount = 0
+    shop.promotion_offers.each do |offer|
+      # check if meets condition
+      valid = offer[:cart_rules].all? do |key, rules| # all? to check all condition is true
+        object = get_object_from_string(self, key) # call function
+        if object.is_a?(Array) # check object an array
+          result = object.map do |object_item|
+              rules.all? do |rule| # all? to check all true
+                  object_to_compare = get_object_from_string(object_item, rule[:code])
+                  compare(object_to_compare, rule[:operation], rule[:value])
+              end
+          end
+          result.include?(true) # on array object, just need 1 item match all rules
+        else
+          rules.all? do |rule| # all? to check all true
+            compare(object, rule[:operation], rule[:value])
+          end
+        end
+      end
+      puts "valid #{valid}"
+      next unless valid
+      
+    end
+    
+    return {
+      total: -(shipping_discount + item_discount),
+      # shipping: -shipping_discount,
+      items: -item_discount
+    }
+  end
+
+  # call string method from object/variable
+  def get_object_from_string(object, code)
+      return object.send(code) unless code.is_a?(Array)
+      code.each do |c|
+        object = get_object_from_string(object, c)
+      end
+      return object
+  end
+
+  # execute operation from string
+  def compare(object, operation, value)
+      if operation == "include?"
+        value.send(operation, object)
+      else
+        object.send(operation, value)
+      end
   end
 
   def print_data
@@ -58,7 +114,7 @@ class Cart
     puts "--------"
     puts "|\ttotal_item_prices\t\t|\t\t#{total_item_prices.round(2)}\t|"
     puts "|\ttotal_item_discount\t\t|\t\t#{total_item_discount.round(2)}\t|"
-    # puts "|\tdiscount_total\t\t\t|\t\t#{discount_total.round(2)}\t|"
+    puts "|\tsubtotal_item_prices\t\t|\t\t#{subtotal_item_prices.round(2)}\t|"
     puts "|\tshipping_cost\t\t\t|\t\t#{shipping_cost.round(2)}\t|"
     puts "|\tgrand_total\t\t\t|\t\t#{grand_total.round(2)}\t|"
     puts "--------"

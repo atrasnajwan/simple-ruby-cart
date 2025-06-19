@@ -20,8 +20,9 @@ class Shop
   # add user to this shop
   def add_user(name)
       return "Please include name" unless name
-      
+
       users[name] = User.new(self, name)
+      return users[name]
   end
   
 end
